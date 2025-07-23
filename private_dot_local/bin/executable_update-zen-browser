@@ -2,7 +2,9 @@
 
 set -e
 
+url='https://github.com/zen-browser/desktop/releases/latest/download/zen.linux-x86_64.tar.xz'
 archiveFilename="$HOME/Downloads/zen.linux-x86_64.tar.xz"
+curl -L -o "$archiveFilename" "$url"
 
 if [[ ! -f "$archiveFilename" ]]; then
   echo -e "\e[31mError: $archiveFilename does not exist. Please download Zen browser before running this script.\e[0m"
