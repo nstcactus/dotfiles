@@ -1,27 +1,42 @@
 #!/bin/bash
-
 set -euo pipefail
 
-# Check if npm is installed (should be installed if Node.js is present)
+# ----------------------------
+# Determine Homebrew prefix and ensure its bin is in PATH
+BREW_PREFIX=$(brew --prefix)
+export PATH="$BREW_PREFIX/bin:$PATH"
+
+# ----------------------------
+# Ensure user-local npm global directory
+USER_NPM_DIR="$HOME/.local"
+mkdir -p "$USER_NPM_DIR"
+
+# Configure npm to use user-local directory
+npm config set prefix "$USER_NPM_DIR"
+export PATH="$USER_NPM_DIR/bin:$PATH"
+
+# ----------------------------
+# Check if npm is installed
 if ! command -v npm >/dev/null 2>&1; then
-  echo "🚨 npm is not installed. Please install Node.js and npm…"
+  echo "🚨 npm is not installed. Please install Node.js and npm via Homebrew…"
   exit 1
 fi
 
-# Check if commitlint is installed globally using npm list
-if ! npm list --global commitlint >/dev/null 2>&1; then
-  echo "⚙️ commitlint not found globally. Installing commitlint…"
+# ----------------------------
+# Install commitlint if missing
+if ! command -v commitlint >/dev/null 2>&1; then
+  echo "⚙️ commitlint not found. Installing commitlint locally to $USER_NPM_DIR…"
   npm install --global commitlint
 else
-  echo "✅ commitlint is already installed globally…"
+  echo "✅ commitlint is already installed…"
 fi
 
-# Check if @nstcactus/commitlint-config is installed globally using npm list
+# Install @nstcactus/commitlint-config if missing
 if ! npm list --global @nstcactus/commitlint-config >/dev/null 2>&1; then
-  echo "⚙️ @nstcactus/commitlint-config not found globally. Installing @nstcactus/commitlint-config…"
+  echo "⚙️ @nstcactus/commitlint-config not found. Installing locally…"
   npm install --global @nstcactus/commitlint-config
 else
-  echo "✅ @nstcactus/commitlint-config is already installed globally…"
+  echo "✅ @nstcactus/commitlint-config is already installed…"
 fi
 
-echo "🎉 commitlint installed…"
+echo "🎉 commitlint setup complete!"
