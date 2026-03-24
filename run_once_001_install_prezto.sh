@@ -1,21 +1,32 @@
-#!/usr/bin/env zsh
-
+#!/usr/bin/env bash
 set -euo pipefail
 
-# Clone Prezto
+BREW_ZSH="$(brew --prefix)/bin/zsh"
 PREZTO_DIR="${ZDOTDIR:-$HOME}/.zprezto"
-if [[ ! -d "${PREZTO_DIR}" ]]; then
+
+# Ensure Homebrew zsh is a valid login shell
+if ! grep -qx "$BREW_ZSH" /etc/shells; then
+  echo "Adding $BREW_ZSH to /etc/shells…"
+  echo "$BREW_ZSH" | sudo tee -a /etc/shells
+fi
+
+# Clone Prezto if missing
+if [[ ! -d "$PREZTO_DIR" ]]; then
   echo "Cloning Prezto in $PREZTO_DIR…"
   git clone --recursive https://github.com/sorin-ionescu/prezto.git "$PREZTO_DIR"
 fi
 
-# Clone prezto-contrib
-echo "Cloning Prezto contrib in $PREZTO_DIR/contrib"
-if [[ ! -d "${PREZTO_DIR}/contrib" ]]; then
+# Clone contrib if missing
+if [[ ! -d "$PREZTO_DIR/contrib" ]]; then
   echo "Cloning Prezto contrib…"
-  git clone --recurse-submodules https://github.com/belak/prezto-contrib "${PREZTO_DIR}/contrib"
+  git clone --recurse-submodules https://github.com/belak/prezto-contrib "$PREZTO_DIR/contrib"
 fi
 
-# Change shell to ZSH
-echo "Changing shell to ZSH… You may need to authenticate."
-chsh -s /bin/zsh
+# Change login shell
+CURRENT_SHELL="$(getent passwd "$USER" | cut -d: -f7)"
+if [[ "$CURRENT_SHELL" != "$BREW_ZSH" ]]; then
+  echo "Changing shell to $BREW_ZSH… You may need to authenticate."
+  chsh -s "$BREW_ZSH"
+else
+  echo "Shell is already $BREW_ZSH — skipping chsh."
+fi
