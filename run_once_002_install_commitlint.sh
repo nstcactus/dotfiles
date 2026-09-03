@@ -1,42 +1,34 @@
 #!/bin/bash
+
 set -euo pipefail
 
-# ----------------------------
-# Determine Homebrew prefix and ensure its bin is in PATH
-BREW_PREFIX=$(brew --prefix)
-export PATH="$BREW_PREFIX/bin:$PATH"
+source "$HOME/.config/shell/homebrew.sh"
 
-# ----------------------------
-# Ensure user-local npm global directory
-USER_NPM_DIR="$HOME/.local"
-mkdir -p "$USER_NPM_DIR"
-
-# Configure npm to use user-local directory
-npm config set prefix "$USER_NPM_DIR"
-export PATH="$USER_NPM_DIR/bin:$PATH"
-
-# ----------------------------
-# Check if npm is installed
+echo "PATH: $PATH"
+echo "User: $(whoami)"
+echo "SHELL: $SHELL"
+# Check if npm is installed (should be installed if Node.js is present)
 if ! command -v npm >/dev/null 2>&1; then
-  echo "🚨 npm is not installed. Please install Node.js and npm via Homebrew…"
+  echo "🚨 npm is not installed. Please install Node.js and npm…"
   exit 1
 fi
 
-# ----------------------------
-# Install commitlint if missing
-if ! command -v commitlint >/dev/null 2>&1; then
-  echo "⚙️ commitlint not found. Installing commitlint locally to $USER_NPM_DIR…"
+npm config set prefix "$HOME/.local/npm"
+
+# Check if commitlint is installed globally using npm list
+if ! npm list --global commitlint >/dev/null 2>&1; then
+  echo "⚙️ commitlint not found globally. Installing commitlint…"
   npm install --global commitlint
 else
-  echo "✅ commitlint is already installed…"
+  echo "✅ commitlint is already installed globally…"
 fi
 
-# Install @nstcactus/commitlint-config if missing
+# Check if @nstcactus/commitlint-config is installed globally using npm list
 if ! npm list --global @nstcactus/commitlint-config >/dev/null 2>&1; then
-  echo "⚙️ @nstcactus/commitlint-config not found. Installing locally…"
+  echo "⚙️ @nstcactus/commitlint-config not found globally. Installing @nstcactus/commitlint-config…"
   npm install --global @nstcactus/commitlint-config
 else
-  echo "✅ @nstcactus/commitlint-config is already installed…"
+  echo "✅ @nstcactus/commitlint-config is already installed globally…"
 fi
 
-echo "🎉 commitlint setup complete!"
+echo "🎉 commitlint installed…"

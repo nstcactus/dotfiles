@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+source "$HOME/.config/shell/homebrew.sh"
+
 BREW_ZSH="$(brew --prefix)/bin/zsh"
 PREZTO_DIR="${ZDOTDIR:-$HOME}/.zprezto"
 

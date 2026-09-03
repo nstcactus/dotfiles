@@ -1,0 +1,22 @@
+packages:
+  linux:
+    apt:
+      - build-essential
+      - curl
+      - file
+      - git
+    brew:
+      trust:
+        - ddev/ddev
+      formulas:
+        - zsh
+        - ddev/ddev/ddev
+        - git-standup
+        - php
+        - composer
+        - node
+        - mkcert
+        - yt-dlp
+        - git
+        - thefuck
+        - aria2

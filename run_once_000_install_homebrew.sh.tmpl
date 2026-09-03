@@ -11,64 +11,48 @@ else
   NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
   {{ else if eq .chezmoi.os "linux" }}
   echo "🐧 Installing Linuxbrew…"
+  sudo whoami > /dev/null
 
-  # Add linuxbrew user if missing
-  if ! id -u linuxbrew >/dev/null 2>&1; then
-    echo "👤 Adding a linuxbrew user…"
-    sudo useradd -m -s /bin/bash linuxbrew
-  else
-    echo "👤 linuxbrew user already exists."
+  echo "👤 Adding a linuxbrew user…"
+  if ! getent group linuxbrew >/dev/null; then
+    sudo groupadd linuxbrew
   fi
 
-  # Install basic build tools
-  if command -v apt >/dev/null 2>&1; then
-    sudo apt-get update
-    sudo apt-get install -y build-essential curl file git
-  elif command -v dnf >/dev/null 2>&1; then
-    sudo dnf install -y @development-tools curl file git
-  elif command -v pacman >/dev/null 2>&1; then
-    sudo pacman -Sy --needed base-devel curl file git
-  else
-    echo "❌ Unsupported package manager. Install build tools manually."
-    exit 1
+  if ! id linuxbrew >/dev/null 2>&1; then
+    sudo useradd -m -N -g linuxbrew -s /bin/bash linuxbrew
   fi
 
   # Install Linuxbrew as linuxbrew user
   sudo -u linuxbrew env NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-
-  # Add brew wrapper script, ensure /tmp cwd
-  echo "📟 Adding a /usr/local/bin/brew wrapper script to run brew as linuxbrew…"
-  sudo tee /usr/local/bin/brew > /dev/null <<'EOF'
-#!/bin/bash
-cd /tmp || exit 1
-sudo -u linuxbrew /home/linuxbrew/.linuxbrew/bin/brew "$@"
-EOF
-  sudo chmod +x /usr/local/bin/brew
+  echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"' | sudo -u linuxbrew tee -a /home/linuxbrew/.bashrc
+  echo 'source $HOME/.config/shell/homebrew.sh' >> $HOME/.bashrc
 
   {{ end }}
   echo "✅ Homebrew installed."
 fi
 
-# -----------------------------
-# Brew package installation
-# -----------------------------
+{{ if eq .chezmoi.os "linux" -}}
+echo "📦 Installing Homebrew packages…"
 
-# Base packages (always installed)
-BASE_PACKAGES=("git" "zsh" "thefuck" "aria2" "node")
+brewfile="$(mktemp)"
+trap 'rm -f "$brewfile"' EXIT
 
-# Workstation packages (optional)
-WORKSTATION_PACKAGES=("ddev/ddev" "ddev" "git-standup" "php" "composer" "node" "mkcert" "yt-dlp")
+cat > "$brewfile" <<'EOF'
+{{ range .packages.linux.brew.formulas -}}
+brew {{ . | quote }}
+{{ end -}}
+EOF
 
-# Ask user if they want workstation packages
-read -p "Do you want to install workstation packages? [y/N] " REPLY
-if [[ "$REPLY" =~ ^[Yy]$ ]]; then
-  PACKAGES=("${BASE_PACKAGES[@]}" "${WORKSTATION_PACKAGES[@]}")
-else
-  PACKAGES=("${BASE_PACKAGES[@]}")
-fi
+chmod 644 "$brewfile"
 
-echo "📦 Installing Brew packages…"
-for pkg in "${PACKAGES[@]}"; do
-  brew list "$pkg" >/dev/null 2>&1 || brew install "$pkg"
-done
-echo "✅ Brew packages installed."
+cd /home/linuxbrew
+echo "Brewfile content:"
+cat "$brewfile"
+echo "------------"
+{{- range .packages.linux.brew.trust }}
+sudo -u linuxbrew /home/linuxbrew/.linuxbrew/bin/brew trust {{ . | quote }}
+{{- end }}
+sudo -u linuxbrew /home/linuxbrew/.linuxbrew/bin/brew bundle --file="$brewfile"
+
+{{ end -}}
+
